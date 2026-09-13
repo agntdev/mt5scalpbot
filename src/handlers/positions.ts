@@ -1,15 +1,15 @@
 import { Composer } from "grammy";
+import type { Ctx } from "../bot.js";
+import { requireOwner, inlineButton, inlineKeyboard } from "../toolkit/index.js";
+import { loadState, money } from "../domain.js";
 
-// SCAFFOLD — generated from the bot blueprint BEFORE the agent runs.
-// Keep a LIVE registration (.command / .callbackQuery / …) so this feature is
-// never an empty stub. Replace the reply body with real logic + copy; if you
-// change the user-facing text, update tests/specs to match EXACTLY.
-// Do NOT rewrite src/bot.ts — buildBot() already auto-loads this module.
-
-const composer = new Composer();
+const composer = new Composer<Ctx>();
 
 composer.command("positions", async (ctx) => {
-  await ctx.reply("List current open positions with symbol, direction, entry, size, unrealized P/L");
+  if (!(await requireOwner(ctx))) return;
+  const positions = (await loadState(ctx)).snapshots.at(-1)?.positions ?? [];
+  const text = positions.length === 0 ? "No open positions." : positions.map((p) => `${p.symbol} ${p.direction.toUpperCase()} · Entry ${p.entry_price} · Size ${p.size} · P/L ${money(p.unrealized_pnl)}`).join("\n");
+  await ctx.reply(text, { reply_markup: inlineKeyboard([[inlineButton("Refresh", "menu:positions"), inlineButton("Back", "menu:main")]]) });
 });
 
 export default composer;

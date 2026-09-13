@@ -1,17 +1,16 @@
 import { Composer } from "grammy";
+import type { Ctx } from "../bot.js";
+import { inlineButton, inlineKeyboard, registerMainMenuItem, requireOwner } from "../toolkit/index.js";
+import { formatSnapshot, loadState } from "../domain.js";
 
-// SCAFFOLD — generated from the bot blueprint BEFORE the agent runs.
-// Keep a LIVE registration (.command / .callbackQuery / …) so this feature is
-// never an empty stub. Replace the reply body with real logic + copy; if you
-// change the user-facing text, update tests/specs to match EXACTLY.
-// Do NOT rewrite src/bot.ts — buildBot() already auto-loads this module.
-// Menu: wire this into /start via registerMainMenuItem({ label: "Balance", data: "menu:balance" }) if the toolkit exposes it.
-
-const composer = new Composer();
+registerMainMenuItem({ label: "Balance", data: "menu:balance", order: 10 });
+const composer = new Composer<Ctx>();
 
 composer.callbackQuery("menu:balance", async (ctx) => {
   await ctx.answerCallbackQuery();
-  await ctx.reply("Quick access to current balance/equity");
+  if (!(await requireOwner(ctx))) return;
+  const state = await loadState(ctx);
+  await ctx.reply(formatSnapshot(state.snapshots.at(-1)), { reply_markup: inlineKeyboard([[inlineButton("↻ Refresh", "menu:balance"), inlineButton("Back", "menu:main")]]) });
 });
 
 export default composer;

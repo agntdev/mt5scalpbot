@@ -7,7 +7,7 @@
           {
             "method": "sendMessage",
             "payload": {
-              "text": "Receive trade open/close and account snapshot events as JSON from the EA"
+              "text": "Owner access isn't set up yet."
             }
           }
         ],

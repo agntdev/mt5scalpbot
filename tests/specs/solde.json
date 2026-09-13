@@ -7,7 +7,7 @@
           {
             "method": "sendMessage",
             "payload": {
-              "text": "Show current account balance and equity"
+              "text": "Owner access isn't set up yet."
             }
           }
         ],
