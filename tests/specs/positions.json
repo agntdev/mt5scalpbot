@@ -7,7 +7,7 @@
           {
             "method": "sendMessage",
             "payload": {
-              "text": "List current open positions with symbol, direction, entry, size, unrealized P/L"
+              "text": "Owner access isn't set up yet."
             }
           }
         ],

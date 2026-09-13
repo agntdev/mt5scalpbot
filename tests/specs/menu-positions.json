@@ -7,7 +7,7 @@
           {
             "method": "sendMessage",
             "payload": {
-              "text": "Quick access to open positions list"
+              "text": "Owner access isn't set up yet."
             }
           }
         ],

@@ -14,6 +14,9 @@ import { webhookCallback, Composer, type Bot } from "grammy";
 import { buildBot, type Ctx } from "./bot.js";
 import { handlers } from "./handlers.generated.js";
 import { createDurableSessionStorage, type WorkerEnv } from "./toolkit/session/durable.js";
+import { processEvent } from "./handlers/post-webhook-events.js";
+import { events, latestSnapshot, now } from "./domain.js";
+import { adminChatId } from "./toolkit/index.js";
 
 export { ChatDO } from "./toolkit/session/durable.js";
 
@@ -79,6 +82,30 @@ export default {
       return webhookCallback(bot, "cloudflare-mod")(request);
     }
 
+    if (request.method === "POST" && url.pathname === "/webhook/events") {
+      if (!env.WEBHOOK_SECRET || request.headers.get("X-Webhook-Secret") !== env.WEBHOOK_SECRET) {
+        return Response.json({ ok: false, error: "Webhook authentication is not configured." }, { status: 401 });
+      }
+      let payload: unknown;
+      try { payload = await request.json(); } catch { return Response.json({ ok: false, error: "Send a valid JSON event." }, { status: 400 }); }
+      if (!payload || typeof payload !== "object" || Array.isArray(payload)) return Response.json({ ok: false, error: "Send one event object as JSON." }, { status: 400 });
+      const bot = await getBot(env);
+      const result = await processEvent({ api: bot.api, env } as unknown as Ctx, payload as Record<string, unknown>);
+      return Response.json(result, { status: result.ok ? 200 : 400 });
+    }
+
     return new Response("not found", { status: 404 });
+  },
+  async scheduled(_event: unknown, env: WorkerEnv): Promise<void> {
+    const bot = await getBot(env);
+    const id = adminChatId({ env });
+    if (!id) return;
+    const ctx = { api: bot.api, env } as unknown as Ctx;
+    const since = new Date(now().getTime() - 24 * 60 * 60 * 1000);
+    const today = (await events(ctx, since)).filter((item) => item.closeTime !== undefined && item.pnl !== undefined);
+    const snapshot = await latestSnapshot(ctx);
+    const net = today.reduce((sum, item) => sum + (item.pnl ?? 0), 0);
+    const text = `Daily summary\nTrades: ${today.length}\nWinners: ${today.filter((item) => (item.pnl ?? 0) > 0).length}\nLosers: ${today.filter((item) => (item.pnl ?? 0) < 0).length}\nNet P/L: ${net.toFixed(2)}${snapshot ? `\nBalance: ${snapshot.balance.toFixed(2)}\nEquity: ${snapshot.equity.toFixed(2)}` : ""}`;
+    try { await bot.api.sendMessage(id, text); } catch { /* A blocked owner chat should not fail the scheduled job. */ }
   },
 };

@@ -1,17 +1,3 @@
-import { Composer } from "grammy";
-
-// SCAFFOLD — generated from the bot blueprint BEFORE the agent runs.
-// Keep a LIVE registration (.command / .callbackQuery / …) so this feature is
-// never an empty stub. Replace the reply body with real logic + copy; if you
-// change the user-facing text, update tests/specs to match EXACTLY.
-// Do NOT rewrite src/bot.ts — buildBot() already auto-loads this module.
-// Menu: wire this into /start via registerMainMenuItem({ label: "Positions", data: "menu:positions" }) if the toolkit exposes it.
-
-const composer = new Composer();
-
-composer.callbackQuery("menu:positions", async (ctx) => {
-  await ctx.answerCallbackQuery();
-  await ctx.reply("Quick access to open positions list");
-});
-
-export default composer;
+import { Composer } from "grammy"; import type { Ctx } from "../bot.js"; import { registerMainMenuItem } from "../toolkit/index.js"; import { actions, owner, positionsText } from "../handler-common.js";
+registerMainMenuItem({label:"Positions",data:"menu:positions",order:20}); const composer=new Composer<Ctx>();
+composer.callbackQuery("menu:positions",async ctx=>{await ctx.answerCallbackQuery();if(!(await owner(ctx)))return;await ctx.reply(await positionsText(ctx),{reply_markup:actions});}); export default composer;

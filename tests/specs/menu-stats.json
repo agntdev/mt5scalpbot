@@ -7,7 +7,7 @@
           {
             "method": "sendMessage",
             "payload": {
-              "text": "Quick access to recent performance stats (30d default)"
+              "text": "Owner access isn't set up yet."
             }
           }
         ],
