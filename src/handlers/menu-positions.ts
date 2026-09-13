@@ -1,17 +1,17 @@
 import { Composer } from "grammy";
+import type { Ctx } from "../bot.js";
+import { inlineButton, inlineKeyboard, registerMainMenuItem, requireOwner } from "../toolkit/index.js";
+import { loadState, money } from "../domain.js";
 
-// SCAFFOLD — generated from the bot blueprint BEFORE the agent runs.
-// Keep a LIVE registration (.command / .callbackQuery / …) so this feature is
-// never an empty stub. Replace the reply body with real logic + copy; if you
-// change the user-facing text, update tests/specs to match EXACTLY.
-// Do NOT rewrite src/bot.ts — buildBot() already auto-loads this module.
-// Menu: wire this into /start via registerMainMenuItem({ label: "Positions", data: "menu:positions" }) if the toolkit exposes it.
-
-const composer = new Composer();
+registerMainMenuItem({ label: "Positions", data: "menu:positions", order: 20 });
+const composer = new Composer<Ctx>();
 
 composer.callbackQuery("menu:positions", async (ctx) => {
   await ctx.answerCallbackQuery();
-  await ctx.reply("Quick access to open positions list");
+  if (!(await requireOwner(ctx))) return;
+  const positions = (await loadState(ctx)).snapshots.at(-1)?.positions ?? [];
+  const text = positions.length === 0 ? "No open positions." : positions.map((p) => `${p.symbol} ${p.direction.toUpperCase()} · ${p.size} · P/L ${money(p.unrealized_pnl)}`).join("\n");
+  await ctx.reply(text, { reply_markup: inlineKeyboard([[inlineButton("↻ Refresh", "menu:positions"), inlineButton("Back", "menu:main")]]) });
 });
 
 export default composer;

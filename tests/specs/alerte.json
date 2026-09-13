@@ -7,7 +7,7 @@
           {
             "method": "sendMessage",
             "payload": {
-              "text": "Interactive flow to set, show, or disable the loss threshold (accepts currency or percent like '50' or '5%')"
+              "text": "Owner access isn't set up yet."
             }
           }
         ],
