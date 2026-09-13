@@ -7,7 +7,7 @@
           {
             "method": "sendMessage",
             "payload": {
-              "text": "Quick access to current balance/equity"
+              "text": "Owner access isn't set up yet."
             }
           }
         ],

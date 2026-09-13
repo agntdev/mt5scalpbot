@@ -1,15 +1,13 @@
 import { Composer } from "grammy";
-
-// SCAFFOLD — generated from the bot blueprint BEFORE the agent runs.
-// Keep a LIVE registration (.command / .callbackQuery / …) so this feature is
-// never an empty stub. Replace the reply body with real logic + copy; if you
-// change the user-facing text, update tests/specs to match EXACTLY.
-// Do NOT rewrite src/bot.ts — buildBot() already auto-loads this module.
-
-const composer = new Composer();
-
-composer.command("alerte", async (ctx) => {
-  await ctx.reply("Interactive flow to set, show, or disable the loss threshold (accepts currency or percent like '50' or '5%')");
-});
-
+import type { Ctx } from "../bot.js";
+import { registerMainMenuItem, inlineButton, inlineKeyboard } from "../toolkit/index.js";
+import { getAlert, now, setAlert } from "../domain.js";
+import { owner } from "../handler-common.js";
+registerMainMenuItem({label:"Alerts",data:"menu:alerts",order:40});
+const composer=new Composer<Ctx>();
+const alertKeyboard=inlineKeyboard([[inlineButton("Disable alerts","alert:off"),inlineButton("⬅️ Menu","menu:main")]]);
+composer.command("alerte",async ctx=>{if(!(await owner(ctx)))return;const current=await getAlert(ctx);if(current?.enabled){await ctx.reply(`Current loss alert: ${current.value}${current.unit==="percent"?"%":""}. Send a new amount or off.`,{reply_markup:alertKeyboard});return;}ctx.session.alertStep="threshold";await ctx.reply("Send a loss threshold such as 50 or 5% — or send off to disable.",{reply_markup:{force_reply:true}});});
+composer.callbackQuery("menu:alerts",async ctx=>{await ctx.answerCallbackQuery();if(!(await owner(ctx)))return;ctx.session.alertStep="threshold";await ctx.reply("Send a loss threshold such as 50 or 5% — or send off to disable.",{reply_markup:{force_reply:true}});});
+composer.callbackQuery("alert:off",async ctx=>{await ctx.answerCallbackQuery();if(!(await owner(ctx)))return;await setAlert(ctx,{enabled:false,unit:"currency",value:0,updatedAt:now().toISOString()});await ctx.reply("Loss alerts are disabled.",{reply_markup:alertKeyboard});});
+composer.on("message:text",async (ctx,next)=>{if(ctx.session.alertStep!=="threshold")return next();if(!(await owner(ctx)))return;const raw=ctx.message.text.trim().toLowerCase();ctx.session.alertStep=undefined;if(raw==="off"){await setAlert(ctx,{enabled:false,unit:"currency",value:0,updatedAt:now().toISOString()});await ctx.reply("Loss alerts are disabled.");return;}const percent=raw.endsWith("%");const number=Number(percent?raw.slice(0,-1):raw);if(!Number.isFinite(number)||number<=0){ctx.session.alertStep="threshold";await ctx.reply("That threshold isn't valid. Send a positive amount such as 50 or 5%.",{reply_markup:{force_reply:true}});return;}await setAlert(ctx,{enabled:true,unit:percent?"percent":"currency",value:number,updatedAt:now().toISOString()});await ctx.reply(`Loss alerts are set at ${number}${percent?"%":""}. You’ll be notified when the threshold is exceeded.`);});
 export default composer;

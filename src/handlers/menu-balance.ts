@@ -1,17 +1,10 @@
 import { Composer } from "grammy";
-
-// SCAFFOLD — generated from the bot blueprint BEFORE the agent runs.
-// Keep a LIVE registration (.command / .callbackQuery / …) so this feature is
-// never an empty stub. Replace the reply body with real logic + copy; if you
-// change the user-facing text, update tests/specs to match EXACTLY.
-// Do NOT rewrite src/bot.ts — buildBot() already auto-loads this module.
-// Menu: wire this into /start via registerMainMenuItem({ label: "Balance", data: "menu:balance" }) if the toolkit exposes it.
-
-const composer = new Composer();
-
-composer.callbackQuery("menu:balance", async (ctx) => {
-  await ctx.answerCallbackQuery();
-  await ctx.reply("Quick access to current balance/equity");
-});
-
+import type { Ctx } from "../bot.js";
+import { registerMainMenuItem } from "../toolkit/index.js";
+import { actions, balanceText, owner } from "../handler-common.js";
+registerMainMenuItem({ label: "Balance", data: "menu:balance", order: 10 });
+const composer=new Composer<Ctx>();
+async function show(ctx: Ctx) { if(!(await owner(ctx))) return; await ctx.reply(await balanceText(ctx),{reply_markup:actions}); }
+composer.callbackQuery("menu:balance",async ctx=>{await ctx.answerCallbackQuery();await show(ctx);});
+composer.callbackQuery("menu:refresh",async ctx=>{await ctx.answerCallbackQuery();await show(ctx);});
 export default composer;

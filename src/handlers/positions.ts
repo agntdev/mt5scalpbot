@@ -1,15 +1,2 @@
-import { Composer } from "grammy";
-
-// SCAFFOLD — generated from the bot blueprint BEFORE the agent runs.
-// Keep a LIVE registration (.command / .callbackQuery / …) so this feature is
-// never an empty stub. Replace the reply body with real logic + copy; if you
-// change the user-facing text, update tests/specs to match EXACTLY.
-// Do NOT rewrite src/bot.ts — buildBot() already auto-loads this module.
-
-const composer = new Composer();
-
-composer.command("positions", async (ctx) => {
-  await ctx.reply("List current open positions with symbol, direction, entry, size, unrealized P/L");
-});
-
-export default composer;
+import { Composer } from "grammy"; import type { Ctx } from "../bot.js"; import { actions,owner,positionsText } from "../handler-common.js";
+const composer=new Composer<Ctx>(); composer.command("positions",async ctx=>{if(!(await owner(ctx)))return;await ctx.reply(await positionsText(ctx),{reply_markup:actions});}); export default composer;

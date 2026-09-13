@@ -7,7 +7,7 @@
           {
             "method": "sendMessage",
             "payload": {
-              "text": "Show performance summary (default window: last 30 days)"
+              "text": "Owner access isn't set up yet."
             }
           }
         ],
